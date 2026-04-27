@@ -1,3 +1,4 @@
+export { GraphQLDocsModule } from './graphql-docs.module';
 export * from './harvest/docs-model';
 export {
   GraphQLDocsOptions,
