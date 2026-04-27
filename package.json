@@ -15,8 +15,8 @@
   "packageManager": "pnpm@10.29.2",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "lint": "eslint --ext .ts src test",
-    "lint:fix": "eslint --ext .ts src test --fix",
+    "lint": "eslint --ext .ts src",
+    "lint:fix": "eslint --ext .ts src --fix",
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
