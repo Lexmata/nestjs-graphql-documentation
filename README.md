@@ -67,7 +67,7 @@ GraphQLDocsModule.forRootAsync({
 
 ## Documentation tags
 
-The module reads GraphQL `description` text as Markdown and extracts three structured tags from lines at column zero:
+The module reads each GraphQL `description` and extracts three structured tags from lines at column zero, leaving the remaining prose as the displayed description body:
 
 - `@example` — multi-line code block (terminates at the next blank line or tag).
 - `@auth <value>` — single-line auth note.

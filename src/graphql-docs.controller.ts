@@ -11,6 +11,13 @@ interface HttpResLike {
   header?(key: string, value: string): unknown;
 }
 
+interface HttpReqLike {
+  originalUrl?: string;
+  url?: string;
+}
+
+const STATIC_CACHE_CONTROL = 'public, max-age=3600';
+
 function setHeader(res: HttpResLike, key: string, value: string): void {
   if (typeof res.setHeader === 'function') {
     res.setHeader(key, value);
@@ -19,17 +26,22 @@ function setHeader(res: HttpResLike, key: string, value: string): void {
   }
 }
 
-interface HttpReqLike {
-  originalUrl?: string;
-  url?: string;
+function setContentHeaders(res: HttpResLike, contentType: string, cacheable: boolean): void {
+  setHeader(res, 'Content-Type', contentType);
+  if (cacheable) setHeader(res, 'Cache-Control', STATIC_CACHE_CONTROL);
 }
 
 @Controller()
 export class GraphQLDocsController {
+  private readonly cachedCss: string;
+  private cachedSchemaJson: string | undefined;
+
   constructor(
     private readonly harvester: SchemaHarvesterService,
     @Inject(GRAPHQL_DOCS_OPTIONS) private readonly options: GraphQLDocsOptions,
-  ) {}
+  ) {
+    this.cachedCss = renderCss(this.options.customCss);
+  }
 
   @Get()
   getHtml(
@@ -40,7 +52,7 @@ export class GraphQLDocsController {
       typeof req === 'string'
         ? req
         : req?.originalUrl ?? req?.url ?? this.options.path;
-    setHeader(res, 'Content-Type', 'text/html; charset=utf-8');
+    setContentHeaders(res, 'text/html; charset=utf-8', false);
     return renderHtml(
       this.harvester.getModel(),
       { path: this.options.path, title: this.options.title },
@@ -50,23 +62,21 @@ export class GraphQLDocsController {
 
   @Get('app.js')
   getJs(@Res({ passthrough: true }) res: HttpResLike): string {
-    setHeader(res, 'Content-Type', 'application/javascript; charset=utf-8');
-    setHeader(res, 'Cache-Control', 'public, max-age=3600');
+    setContentHeaders(res, 'application/javascript; charset=utf-8', true);
     return CLIENT_APP_JS;
   }
 
   @Get('app.css')
   getCss(@Res({ passthrough: true }) res: HttpResLike): string {
-    setHeader(res, 'Content-Type', 'text/css; charset=utf-8');
-    setHeader(res, 'Cache-Control', 'public, max-age=3600');
-    return renderCss(this.options.customCss);
+    setContentHeaders(res, 'text/css; charset=utf-8', true);
+    return this.cachedCss;
   }
 
   @Get('schema.json')
   getSchemaJson(@Res({ passthrough: true }) res: HttpResLike): string {
-    setHeader(res, 'Content-Type', 'application/json; charset=utf-8');
-    setHeader(res, 'Cache-Control', 'public, max-age=3600');
-    return renderSchemaJson(this.harvester.getModel());
+    setContentHeaders(res, 'application/json; charset=utf-8', true);
+    this.cachedSchemaJson ??= renderSchemaJson(this.harvester.getModel());
+    return this.cachedSchemaJson;
   }
 
   @Get(':segment/:name')

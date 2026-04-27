@@ -37,7 +37,6 @@ export interface TypeEntry {
   description: string;
   fields: FieldEntry[];
   implements?: string[];
-  directives?: AppliedDirective[];
 }
 
 export interface UnionEntry {
@@ -87,11 +86,6 @@ export interface ParsedTags {
   examples: string[];
   auth?: string;
   since?: string;
-}
-
-export interface AppliedDirective {
-  name: string;
-  args: Record<string, unknown>;
 }
 
 export type EntityKind =

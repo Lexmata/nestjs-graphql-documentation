@@ -80,6 +80,7 @@ export const CLIENT_APP_JS = String.raw`
       .then(function (model) {
         state.model = model;
         renderNav();
+        wireNavClicks();
         var initial = window.__INITIAL_ENTITY__ || null;
         renderEntity(initial);
         wireSearch();
@@ -121,6 +122,11 @@ export const CLIENT_APP_JS = String.raw`
       html += '</ul></div>';
     });
     replaceChildrenWithHtml(nav, html);
+  }
+
+  function wireNavClicks() {
+    var nav = document.querySelector('[data-ngd-nav]');
+    if (!nav) return;
     nav.addEventListener('click', function (ev) {
       var a = ev.target.closest('a[data-kind]');
       if (!a) return;
