@@ -15,8 +15,8 @@
   "packageManager": "pnpm@10.29.2",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "lint": "eslint --ext .ts src",
-    "lint:fix": "eslint --ext .ts src --fix",
+    "lint": "eslint --ext .ts --no-error-on-unmatched-pattern src test",
+    "lint:fix": "eslint --ext .ts --no-error-on-unmatched-pattern src test --fix",
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
