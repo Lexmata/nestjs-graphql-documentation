@@ -2,7 +2,15 @@
   "name": "@lexmata/nestjs-graphql-documentation",
   "version": "0.1.0",
   "description": "Swagger-like documentation module for NestJS GraphQL applications.",
-  "keywords": ["nestjs", "graphql", "documentation", "swagger", "docs", "mercurius", "apollo"],
+  "keywords": [
+    "nestjs",
+    "graphql",
+    "documentation",
+    "swagger",
+    "docs",
+    "mercurius",
+    "apollo"
+  ],
   "license": "MIT",
   "author": "Lexmata LLC",
   "repository": {
@@ -11,7 +19,11 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "LICENSE", "README.md"],
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "packageManager": "pnpm@10.29.2",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -43,6 +55,7 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/platform-fastify": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
+    "@swc/core": "^1.15.32",
     "@types/node": "^20.0.0",
     "@types/supertest": "^6.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
@@ -57,6 +70,7 @@
     "rxjs": "^7.8.0",
     "supertest": "^6.3.0",
     "typescript": "^5.4.0",
+    "unplugin-swc": "^1.5.9",
     "vitest": "^1.3.0"
   }
 }

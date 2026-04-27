@@ -6,7 +6,17 @@ import { renderCss } from './render/css';
 import { CLIENT_APP_JS } from './render/client-app';
 
 interface HttpResLike {
-  setHeader(key: string, value: string): void;
+  setHeader?(key: string, value: string): void;
+  // Fastify's reply exposes .header(name, value) instead of setHeader.
+  header?(key: string, value: string): unknown;
+}
+
+function setHeader(res: HttpResLike, key: string, value: string): void {
+  if (typeof res.setHeader === 'function') {
+    res.setHeader(key, value);
+  } else if (typeof res.header === 'function') {
+    res.header(key, value);
+  }
 }
 
 interface HttpReqLike {
@@ -30,7 +40,7 @@ export class GraphQLDocsController {
       typeof req === 'string'
         ? req
         : req?.originalUrl ?? req?.url ?? this.options.path;
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    setHeader(res, 'Content-Type', 'text/html; charset=utf-8');
     return renderHtml(
       this.harvester.getModel(),
       { path: this.options.path, title: this.options.title },
@@ -40,22 +50,22 @@ export class GraphQLDocsController {
 
   @Get('app.js')
   getJs(@Res({ passthrough: true }) res: HttpResLike): string {
-    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=3600');
+    setHeader(res, 'Content-Type', 'application/javascript; charset=utf-8');
+    setHeader(res, 'Cache-Control', 'public, max-age=3600');
     return CLIENT_APP_JS;
   }
 
   @Get('app.css')
   getCss(@Res({ passthrough: true }) res: HttpResLike): string {
-    res.setHeader('Content-Type', 'text/css; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=3600');
+    setHeader(res, 'Content-Type', 'text/css; charset=utf-8');
+    setHeader(res, 'Cache-Control', 'public, max-age=3600');
     return renderCss(this.options.customCss);
   }
 
   @Get('schema.json')
   getSchemaJson(@Res({ passthrough: true }) res: HttpResLike): string {
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=3600');
+    setHeader(res, 'Content-Type', 'application/json; charset=utf-8');
+    setHeader(res, 'Cache-Control', 'public, max-age=3600');
     return renderSchemaJson(this.harvester.getModel());
   }
 

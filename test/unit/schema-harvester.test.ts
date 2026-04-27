@@ -5,10 +5,19 @@ import { GraphQLDocsBootstrapError } from '../../src/options';
 
 const goodSchema = buildSchema(`type Query { hello: String }`);
 
+const emptyModuleRef = { get: () => undefined } as never;
+
+function makeService(schema: unknown, options: Record<string, unknown>): SchemaHarvesterService {
+  const svc = new SchemaHarvesterService(emptyModuleRef, options as never);
+  // Attach the mock schema host directly; the service's tryGetSchemaHost prefers
+  // an attached `schemaHost` over ModuleRef so unit tests stay decoupled from Nest.
+  (svc as unknown as { schemaHost: { schema: unknown } }).schemaHost = { schema };
+  return svc;
+}
+
 describe('SchemaHarvesterService', () => {
   it('harvests the schema on onModuleInit and exposes the model', () => {
-    const host = { schema: goodSchema };
-    const svc = new SchemaHarvesterService(host as never, { path: '/docs', title: 'T' });
+    const svc = makeService(goodSchema, { path: '/docs', title: 'T' });
     svc.onModuleInit();
     const model = svc.getModel();
     expect(model.meta.title).toBe('T');
@@ -16,24 +25,23 @@ describe('SchemaHarvesterService', () => {
   });
 
   it('uses default title when options.title is absent', () => {
-    const host = { schema: goodSchema };
-    const svc = new SchemaHarvesterService(host as never, { path: '/docs' });
+    const svc = makeService(goodSchema, { path: '/docs' });
     svc.onModuleInit();
     expect(svc.getModel().meta.title).toBe('GraphQL API');
   });
 
   it('throws GraphQLDocsBootstrapError when schema is missing', () => {
-    const host = { schema: undefined };
-    const svc = new SchemaHarvesterService(host as never, { path: '/docs' });
+    const svc = makeService(undefined, { path: '/docs' });
     expect(() => svc.onModuleInit()).toThrow(GraphQLDocsBootstrapError);
   });
 
   it('logs a warning when include/exclude predicate throws', () => {
-    const host = { schema: goodSchema };
     const warn = vi.fn();
-    const svc = new SchemaHarvesterService(host as never, {
+    const svc = makeService(goodSchema, {
       path: '/docs',
-      include: () => { throw new Error('boom'); },
+      include: () => {
+        throw new Error('boom');
+      },
     });
     (svc as unknown as { logger: { warn: typeof warn } }).logger = { warn } as never;
     svc.onModuleInit();
@@ -41,8 +49,7 @@ describe('SchemaHarvesterService', () => {
   });
 
   it('getModel throws if called before onModuleInit', () => {
-    const host = { schema: goodSchema };
-    const svc = new SchemaHarvesterService(host as never, { path: '/docs' });
+    const svc = makeService(goodSchema, { path: '/docs' });
     expect(() => svc.getModel()).toThrow();
   });
 });

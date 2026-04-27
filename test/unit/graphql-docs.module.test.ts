@@ -3,21 +3,18 @@ import { GraphQLDocsModule } from '../../src/graphql-docs.module';
 import { GRAPHQL_DOCS_OPTIONS } from '../../src/options';
 
 describe('GraphQLDocsModule', () => {
-  it('forRoot registers controller, harvester, and options provider (via inner module)', () => {
+  it('forRoot registers a path-bound controller, harvester, and options provider', () => {
     const def = GraphQLDocsModule.forRoot({ path: '/docs' });
     expect(def.module).toBe(GraphQLDocsModule);
-    const innerModule = (def.imports ?? []).find(
-      (m: unknown) =>
-        typeof m === 'object' && m !== null && 'controllers' in (m as object),
-    ) as
-      | { controllers: unknown[]; providers: Array<{ provide?: unknown }> }
-      | undefined;
-    expect(innerModule).toBeDefined();
-    expect(innerModule!.controllers.length).toBeGreaterThanOrEqual(1);
-    const hasOptionsProvider = innerModule!.providers.some(
-      (p) => (p as { provide?: unknown }).provide === GRAPHQL_DOCS_OPTIONS,
+    expect(def.controllers ?? []).toHaveLength(1);
+    const providers = def.providers ?? [];
+    const hasOptions = providers.some(
+      (p) =>
+        typeof p === 'object' &&
+        p !== null &&
+        (p as { provide?: unknown }).provide === GRAPHQL_DOCS_OPTIONS,
     );
-    expect(hasOptionsProvider).toBe(true);
+    expect(hasOptions).toBe(true);
   });
 
   it('forRoot with enabled:false returns an empty module definition', () => {
@@ -27,12 +24,20 @@ describe('GraphQLDocsModule', () => {
     expect(def.imports ?? []).toEqual([]);
   });
 
-  it('forRootAsync with synchronous factory registers module with resolved path', () => {
+  it('forRootAsync with synchronous factory registers a controller and options provider', () => {
     const def = GraphQLDocsModule.forRootAsync({
       useFactory: () => ({ path: '/docs' }),
     });
     expect(def.module).toBe(GraphQLDocsModule);
-    expect(def.imports?.length).toBeGreaterThan(0);
+    expect(def.controllers ?? []).toHaveLength(1);
+    const providers = def.providers ?? [];
+    const hasOptions = providers.some(
+      (p) =>
+        typeof p === 'object' &&
+        p !== null &&
+        (p as { provide?: unknown }).provide === GRAPHQL_DOCS_OPTIONS,
+    );
+    expect(hasOptions).toBe(true);
   });
 
   it('forRootAsync throws when the factory returns a Promise', () => {

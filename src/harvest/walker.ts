@@ -12,20 +12,59 @@ import {
   GraphQLDirective,
   GraphQLType,
   GraphQLNamedType,
-  isObjectType,
-  isInputObjectType,
-  isInterfaceType,
-  isUnionType,
-  isEnumType,
-  isScalarType,
-  isNonNullType,
-  isListType,
-  isIntrospectionType,
-  isSpecifiedScalarType,
-  isSpecifiedDirective,
   astFromValue,
   print,
 } from 'graphql';
+
+// graphql-js ships type guards (isNonNullType, isObjectType, etc.) but they
+// use `instanceof` checks that throw when the schema was built in a different
+// graphql module realm than the one we imported from - a common situation
+// under vitest, which transforms our TS through vite/swc while host-app
+// GraphQLModule pulls graphql through Node's CJS loader. Duck-type instead of
+// using the named guards; every graphql-js class sets [Symbol.toStringTag] to
+// its class name, and those tags are primitive strings that cross realms.
+function tag(value: unknown): string | undefined {
+  if (value === null || typeof value !== 'object') return undefined;
+  const t = (value as { [Symbol.toStringTag]?: unknown })[Symbol.toStringTag];
+  return typeof t === 'string' ? t : undefined;
+}
+const isNonNullType = (t: unknown): t is { ofType: GraphQLType } =>
+  tag(t) === 'GraphQLNonNull';
+const isListType = (t: unknown): t is { ofType: GraphQLType } =>
+  tag(t) === 'GraphQLList';
+const isObjectType = (t: unknown): t is GraphQLObjectType =>
+  tag(t) === 'GraphQLObjectType';
+const isInputObjectType = (t: unknown): t is GraphQLInputObjectType =>
+  tag(t) === 'GraphQLInputObjectType';
+const isInterfaceType = (t: unknown): t is GraphQLInterfaceType =>
+  tag(t) === 'GraphQLInterfaceType';
+const isUnionType = (t: unknown): t is GraphQLUnionType =>
+  tag(t) === 'GraphQLUnionType';
+const isEnumType = (t: unknown): t is GraphQLEnumType =>
+  tag(t) === 'GraphQLEnumType';
+const isScalarType = (t: unknown): t is GraphQLScalarType =>
+  tag(t) === 'GraphQLScalarType';
+
+// Introspection types (__Schema, __Type, etc.) always start with two
+// underscores per the GraphQL spec.
+const isIntrospectionType = (t: GraphQLNamedType): boolean =>
+  t.name.startsWith('__');
+
+// Built-in scalars defined by the GraphQL spec.
+const SPECIFIED_SCALARS = new Set(['String', 'Int', 'Float', 'Boolean', 'ID']);
+const isSpecifiedScalarType = (t: { name: string }): boolean =>
+  SPECIFIED_SCALARS.has(t.name);
+
+// Built-in directives defined by the GraphQL spec.
+const SPECIFIED_DIRECTIVES = new Set([
+  'skip',
+  'include',
+  'deprecated',
+  'specifiedBy',
+  'oneOf',
+]);
+const isSpecifiedDirective = (d: { name: string }): boolean =>
+  SPECIFIED_DIRECTIVES.has(d.name);
 import type {
   DocsModel,
   FieldEntry,
@@ -175,8 +214,20 @@ function toArgEntry(arg: GraphQLArgument): ArgEntry {
 }
 
 function serializeDefault(arg: GraphQLArgument): string {
-  const ast = astFromValue(arg.defaultValue, arg.type);
-  return ast ? print(ast) : String(arg.defaultValue);
+  // Prefer graphql's astFromValue for correct GraphQL literal syntax (quoted
+  // strings, enum values without quotes, etc.). Fall back to JSON if the type
+  // came from a different graphql module realm than our import - graphql-js
+  // cross-realm type checks will throw "cannot use X from another module or
+  // realm" instead of returning a usable AST.
+  try {
+    const ast = astFromValue(arg.defaultValue, arg.type);
+    if (ast) return print(ast);
+  } catch {
+    // cross-realm or unrepresentable value - fall through
+  }
+  return typeof arg.defaultValue === 'string'
+    ? JSON.stringify(arg.defaultValue)
+    : String(arg.defaultValue);
 }
 
 function toObjectEntry(type: GraphQLObjectType): TypeEntry {
