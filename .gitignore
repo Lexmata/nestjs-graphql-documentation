@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+.worktrees/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.vitest-cache/
