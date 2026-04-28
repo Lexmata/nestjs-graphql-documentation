@@ -21,10 +21,10 @@ export class SchemaHarvesterService implements OnModuleInit {
   ) {}
 
   onModuleInit(): void {
-    // Look up GraphQLSchemaHost lazily via ModuleRef with { strict: false } so
-    // we pick it up from @nestjs/graphql's own module scope. Injecting it
-    // directly would require re-importing GraphQLModule, which tries to
-    // instantiate a second module without its forRoot options.
+    this.reharvest();
+  }
+
+  reharvest(): void {
     const host = this.tryGetSchemaHost();
     const schema = host?.schema;
     if (!schema) {
