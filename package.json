@@ -43,6 +43,11 @@
   "engines": {
     "node": ">=22.0.0"
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "provenance": true
+  },
   "scripts": {
     "prepare": "husky",
     "build": "pnpm run build:cjs && pnpm run build:esm && pnpm run build:flag-modules",
@@ -63,7 +68,10 @@
     "test:all": "pnpm test && pnpm test:e2e",
     "test:cov": "vitest run --coverage",
     "commitlint": "commitlint --edit",
-    "prepublishOnly": "pnpm run build:clean && pnpm build"
+    "release:preflight": "pnpm run lint && pnpm run format:check && pnpm exec tsc --noEmit && pnpm run build && pnpm run test:cov",
+    "release:pack": "pnpm pack --pack-destination ./dist-pack",
+    "release:dry": "pnpm publish --dry-run --no-git-checks",
+    "prepublishOnly": "pnpm run build:clean && pnpm run release:preflight"
   },
   "lint-staged": {
     "*.ts": [
