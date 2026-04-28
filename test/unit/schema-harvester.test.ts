@@ -89,4 +89,21 @@ describe('SchemaHarvesterService', () => {
     // Every query is excluded because the predicate always throws.
     expect(svc.getModel().queries).toHaveLength(0);
   });
+
+  it('reharvest() re-walks the schema and replaces the model', () => {
+    const svc = makeService(goodSchema, { path: '/docs', title: 'T' });
+    svc.onModuleInit();
+    const model1 = svc.getModel();
+    svc.reharvest();
+    const model2 = svc.getModel();
+    expect(model2).not.toBe(model1);
+    expect(model2.meta.title).toBe('T');
+  });
+
+  it('reharvest() throws GraphQLDocsBootstrapError when schema is missing', () => {
+    const svc = makeService(goodSchema, { path: '/docs' });
+    svc.onModuleInit();
+    (svc as unknown as { schemaHost: { schema: unknown } }).schemaHost = { schema: undefined };
+    expect(() => svc.reharvest()).toThrow(GraphQLDocsBootstrapError);
+  });
 });

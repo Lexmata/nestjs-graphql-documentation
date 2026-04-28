@@ -1,13 +1,13 @@
-import { Controller, Get, Inject, Req, Res } from '@nestjs/common';
+import { Controller, Get, Inject, Optional, Req, Res } from '@nestjs/common';
 import { SchemaHarvesterService } from './harvest/schema-harvester.service.js';
 import { GRAPHQL_DOCS_OPTIONS, GraphQLDocsOptions } from './options.js';
 import { renderHtml, renderSchemaJson } from './render/html-renderer.js';
 import { renderCss } from './render/css.js';
 import { CLIENT_APP_JS } from './render/client-app.js';
+import { DocsCacheService } from './cache/docs-cache.service.js';
 
 interface HttpResLike {
   setHeader?(key: string, value: string): void;
-  // Fastify's reply exposes .header(name, value) instead of setHeader.
   header?(key: string, value: string): unknown;
 }
 
@@ -17,10 +17,10 @@ interface HttpReqLike {
 }
 
 const STATIC_ASSET_CACHE_CONTROL = 'public, max-age=3600';
-// schema.json may reflect user-specific GraphQL fields once host apps gate the
-// docs route behind auth. Keep it cacheable in the browser but not in shared
-// caches, so a CDN/proxy won't serve one tenant's schema to another.
 const SCHEMA_JSON_CACHE_CONTROL = 'private, max-age=3600';
+
+const CACHE_KEY_SCHEMA = 'ngd:schema.json';
+const CACHE_KEY_HTML_PREFIX = 'ngd:html:';
 
 function setHeader(res: HttpResLike, key: string, value: string): void {
   if (typeof res.setHeader === 'function') {
@@ -46,29 +46,35 @@ function setHtmlHeaders(res: HttpResLike): void {
 
 @Controller()
 export class GraphQLDocsController {
-  // Both caches deferred to first request. Doing either at construction time
-  // would let a misconfigured option (customCss, schema) take down the host
-  // app's entire DI container - which matters because GraphQLDocsModule and
-  // GraphQLModule share an app. Lazy init contains the blast radius to the
-  // docs route and keeps the Nest boot green.
   private cachedCss: string | undefined;
-  private cachedSchemaJson: string | undefined;
 
   constructor(
     private readonly harvester: SchemaHarvesterService,
     @Inject(GRAPHQL_DOCS_OPTIONS) private readonly options: GraphQLDocsOptions,
+    @Optional() private readonly docsCache?: DocsCacheService,
   ) {}
 
   @Get()
-  getHtml(@Res({ passthrough: true }) res: HttpResLike, @Req() req?: HttpReqLike | string): string {
+  async getHtml(
+    @Res({ passthrough: true }) res: HttpResLike,
+    @Req() req?: HttpReqLike | string,
+  ): Promise<string> {
     const path =
       typeof req === 'string' ? req : (req?.originalUrl ?? req?.url ?? this.options.path);
+    const cleanPath = stripQuery(path);
     setHtmlHeaders(res);
-    return renderHtml(
-      this.harvester.getModel(),
-      { path: this.options.path, title: this.options.title },
-      stripQuery(path),
-    );
+
+    if (this.docsCache?.isEnabled()) {
+      const tail = cleanPath.slice(this.options.path.length).replace(/^\//, '');
+      const cacheKey = `${CACHE_KEY_HTML_PREFIX}${tail}`;
+      const cached = await this.docsCache.get(cacheKey);
+      if (cached) return cached;
+      const html = this.renderHtmlResponse(cleanPath);
+      await this.docsCache.set(cacheKey, html);
+      return html;
+    }
+
+    return this.renderHtmlResponse(cleanPath);
   }
 
   @Get('app.js')
@@ -85,18 +91,36 @@ export class GraphQLDocsController {
   }
 
   @Get('schema.json')
-  getSchemaJson(@Res({ passthrough: true }) res: HttpResLike): string {
+  async getSchemaJson(@Res({ passthrough: true }) res: HttpResLike): Promise<string> {
     setSchemaJsonHeaders(res);
-    // Sync init - renderSchemaJson is pure JSON.stringify, never yields, so
-    // a second concurrent request on this event loop cannot observe the
-    // cache mid-write. No lock needed.
-    this.cachedSchemaJson ??= renderSchemaJson(this.harvester.getModel());
-    return this.cachedSchemaJson;
+
+    if (this.docsCache?.isEnabled()) {
+      const cached = await this.docsCache.get(CACHE_KEY_SCHEMA);
+      if (cached) return cached;
+      this.harvester.reharvest();
+      await this.docsCache.invalidate();
+      const json = renderSchemaJson(this.harvester.getModel());
+      await this.docsCache.set(CACHE_KEY_SCHEMA, json);
+      return json;
+    }
+
+    return renderSchemaJson(this.harvester.getModel());
   }
 
   @Get(':segment/:name')
-  getHtmlDeep(@Res({ passthrough: true }) res: HttpResLike, @Req() req: HttpReqLike): string {
+  async getHtmlDeep(
+    @Res({ passthrough: true }) res: HttpResLike,
+    @Req() req: HttpReqLike,
+  ): Promise<string> {
     return this.getHtml(res, req.originalUrl ?? req.url ?? this.options.path);
+  }
+
+  private renderHtmlResponse(cleanPath: string): string {
+    return renderHtml(
+      this.harvester.getModel(),
+      { path: this.options.path, title: this.options.title },
+      cleanPath,
+    );
   }
 }
 

@@ -2,6 +2,8 @@ import { Controller, DynamicModule, Module, Provider } from '@nestjs/common';
 import { SchemaHarvesterService } from './harvest/schema-harvester.service.js';
 import { GraphQLDocsController } from './graphql-docs.controller.js';
 import { GRAPHQL_DOCS_OPTIONS, GraphQLDocsOptions, GraphQLDocsAsyncOptions } from './options.js';
+import { DocsCacheService } from './cache/docs-cache.service.js';
+import { resolveCacheOptions } from './cache/resolve-cache-options.js';
 
 @Module({})
 export class GraphQLDocsModule {
@@ -9,7 +11,13 @@ export class GraphQLDocsModule {
     if (options.enabled === false) {
       return { module: GraphQLDocsModule, controllers: [], providers: [], imports: [] };
     }
-    return buildModule(options.path, [{ provide: GRAPHQL_DOCS_OPTIONS, useValue: options }]);
+    const cacheEnabled = !!resolveCacheOptions(options.cache);
+    return buildModule(
+      options.path,
+      [{ provide: GRAPHQL_DOCS_OPTIONS, useValue: options }],
+      [],
+      cacheEnabled,
+    );
   }
 
   static forRootAsync(async: GraphQLDocsAsyncOptions): DynamicModule {
@@ -34,7 +42,8 @@ export class GraphQLDocsModule {
         '@lexmata/nestjs-graphql-documentation: forRootAsync factory did not return a path.',
       );
     }
-    return buildModule(resolvedPath, [optionsProvider], async.imports ?? []);
+    const cacheEnabled = !!resolveCacheOptions((maybe as GraphQLDocsOptions).cache);
+    return buildModule(resolvedPath, [optionsProvider], async.imports ?? [], cacheEnabled);
   }
 }
 
@@ -42,13 +51,16 @@ function buildModule(
   path: string,
   providers: Provider[],
   imports: NonNullable<DynamicModule['imports']> = [],
+  cacheEnabled = false,
 ): DynamicModule {
   const PathBound = createPathBoundController(path);
+  const allProviders = [...providers, SchemaHarvesterService];
+  if (cacheEnabled) allProviders.push(DocsCacheService);
   return {
     module: GraphQLDocsModule,
     imports,
     controllers: [PathBound],
-    providers: [...providers, SchemaHarvesterService],
+    providers: allProviders,
     exports: [SchemaHarvesterService, GRAPHQL_DOCS_OPTIONS],
   };
 }
