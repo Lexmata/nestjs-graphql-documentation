@@ -1,14 +1,10 @@
 import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { GraphQLSchemaHost } from '@nestjs/graphql';
-import { walkSchema } from './walker';
-import { detectFederation } from './federation';
-import type { DocsModel, EntityRef } from './docs-model';
-import {
-  GRAPHQL_DOCS_OPTIONS,
-  GraphQLDocsOptions,
-  GraphQLDocsBootstrapError,
-} from '../options';
+import { walkSchema } from './walker.js';
+import { detectFederation } from './federation.js';
+import type { DocsModel, EntityRef } from './docs-model.js';
+import { GRAPHQL_DOCS_OPTIONS, GraphQLDocsOptions, GraphQLDocsBootstrapError } from '../options.js';
 
 interface SchemaHostLike {
   schema: unknown;
@@ -78,8 +74,8 @@ function wrapPredicate(
   return (e) => {
     try {
       return pred(e);
-    } catch (err) {
-      logger.warn(`${kind} predicate threw for ${e.kind} ${e.name}: ${(err as Error).message}`);
+    } catch (error) {
+      logger.warn(`${kind} predicate threw for ${e.kind} ${e.name}: ${(error as Error).message}`);
       return kind === 'exclude';
     }
   };

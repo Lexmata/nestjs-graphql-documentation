@@ -1,5 +1,5 @@
 import type { ModuleMetadata, FactoryProvider } from '@nestjs/common';
-import type { EntityRef } from './harvest/docs-model';
+import type { EntityRef } from './harvest/docs-model.js';
 
 export const GRAPHQL_DOCS_OPTIONS = Symbol('GRAPHQL_DOCS_OPTIONS');
 

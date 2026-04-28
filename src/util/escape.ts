@@ -10,7 +10,7 @@ const HTML_ESCAPE_RE = /[&<>"']/g;
 
 export function escapeHtml(value: string | null | undefined): string {
   if (value === null || value === undefined) return '';
-  return String(value).replace(HTML_ESCAPE_RE, (ch) => HTML_ESCAPE_MAP[ch]);
+  return String(value).replaceAll(HTML_ESCAPE_RE, (ch) => HTML_ESCAPE_MAP[ch]);
 }
 
 // Attribute values need the same entity set as body text - &, <, >, ", ' all

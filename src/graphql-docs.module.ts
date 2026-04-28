@@ -1,11 +1,7 @@
 import { Controller, DynamicModule, Module, Provider } from '@nestjs/common';
-import { SchemaHarvesterService } from './harvest/schema-harvester.service';
-import { GraphQLDocsController } from './graphql-docs.controller';
-import {
-  GRAPHQL_DOCS_OPTIONS,
-  GraphQLDocsOptions,
-  GraphQLDocsAsyncOptions,
-} from './options';
+import { SchemaHarvesterService } from './harvest/schema-harvester.service.js';
+import { GraphQLDocsController } from './graphql-docs.controller.js';
+import { GRAPHQL_DOCS_OPTIONS, GraphQLDocsOptions, GraphQLDocsAsyncOptions } from './options.js';
 
 @Module({})
 export class GraphQLDocsModule {
@@ -13,9 +9,7 @@ export class GraphQLDocsModule {
     if (options.enabled === false) {
       return { module: GraphQLDocsModule, controllers: [], providers: [], imports: [] };
     }
-    return buildModule(options.path, [
-      { provide: GRAPHQL_DOCS_OPTIONS, useValue: options },
-    ]);
+    return buildModule(options.path, [{ provide: GRAPHQL_DOCS_OPTIONS, useValue: options }]);
   }
 
   static forRootAsync(async: GraphQLDocsAsyncOptions): DynamicModule {
@@ -30,7 +24,7 @@ export class GraphQLDocsModule {
     const injected = (async.inject ?? []).map(() => undefined as unknown);
     const maybe = async.useFactory(...injected);
     if (maybe instanceof Promise) {
-      throw new Error(
+      throw new TypeError(
         '@lexmata/nestjs-graphql-documentation: forRootAsync requires a synchronous useFactory in v0.1.0 (path must be known at module registration).',
       );
     }

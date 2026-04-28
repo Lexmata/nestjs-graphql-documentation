@@ -28,43 +28,28 @@ function tag(value: unknown): string | undefined {
   const t = (value as { [Symbol.toStringTag]?: unknown })[Symbol.toStringTag];
   return typeof t === 'string' ? t : undefined;
 }
-const isNonNullType = (t: unknown): t is { ofType: GraphQLType } =>
-  tag(t) === 'GraphQLNonNull';
-const isListType = (t: unknown): t is { ofType: GraphQLType } =>
-  tag(t) === 'GraphQLList';
-const isObjectType = (t: unknown): t is GraphQLObjectType =>
-  tag(t) === 'GraphQLObjectType';
+const isNonNullType = (t: unknown): t is { ofType: GraphQLType } => tag(t) === 'GraphQLNonNull';
+const isListType = (t: unknown): t is { ofType: GraphQLType } => tag(t) === 'GraphQLList';
+const isObjectType = (t: unknown): t is GraphQLObjectType => tag(t) === 'GraphQLObjectType';
 const isInputObjectType = (t: unknown): t is GraphQLInputObjectType =>
   tag(t) === 'GraphQLInputObjectType';
 const isInterfaceType = (t: unknown): t is GraphQLInterfaceType =>
   tag(t) === 'GraphQLInterfaceType';
-const isUnionType = (t: unknown): t is GraphQLUnionType =>
-  tag(t) === 'GraphQLUnionType';
-const isEnumType = (t: unknown): t is GraphQLEnumType =>
-  tag(t) === 'GraphQLEnumType';
-const isScalarType = (t: unknown): t is GraphQLScalarType =>
-  tag(t) === 'GraphQLScalarType';
+const isUnionType = (t: unknown): t is GraphQLUnionType => tag(t) === 'GraphQLUnionType';
+const isEnumType = (t: unknown): t is GraphQLEnumType => tag(t) === 'GraphQLEnumType';
+const isScalarType = (t: unknown): t is GraphQLScalarType => tag(t) === 'GraphQLScalarType';
 
 // Introspection types (__Schema, __Type, etc.) always start with two
 // underscores per the GraphQL spec.
-const isIntrospectionType = (t: GraphQLNamedType): boolean =>
-  t.name.startsWith('__');
+const isIntrospectionType = (t: GraphQLNamedType): boolean => t.name.startsWith('__');
 
 // Built-in scalars defined by the GraphQL spec.
 const SPECIFIED_SCALARS = new Set(['String', 'Int', 'Float', 'Boolean', 'ID']);
-const isSpecifiedScalarType = (t: { name: string }): boolean =>
-  SPECIFIED_SCALARS.has(t.name);
+const isSpecifiedScalarType = (t: { name: string }): boolean => SPECIFIED_SCALARS.has(t.name);
 
 // Built-in directives defined by the GraphQL spec.
-const SPECIFIED_DIRECTIVES = new Set([
-  'skip',
-  'include',
-  'deprecated',
-  'specifiedBy',
-  'oneOf',
-]);
-const isSpecifiedDirective = (d: { name: string }): boolean =>
-  SPECIFIED_DIRECTIVES.has(d.name);
+const SPECIFIED_DIRECTIVES = new Set(['skip', 'include', 'deprecated', 'specifiedBy', 'oneOf']);
+const isSpecifiedDirective = (d: { name: string }): boolean => SPECIFIED_DIRECTIVES.has(d.name);
 import type {
   DocsModel,
   FieldEntry,
@@ -77,9 +62,9 @@ import type {
   TypeRef,
   NamedTypeKind,
   EntityRef,
-} from './docs-model';
-import { parseDescription } from './description-parser';
-import { isFederationInternalType, isFederationInternalRootField } from './federation';
+} from './docs-model.js';
+import { parseDescription } from './description-parser.js';
+import { isFederationInternalType, isFederationInternalRootField } from './federation.js';
 
 export interface WalkOptions {
   title: string;
@@ -96,19 +81,19 @@ export function walkSchema(schema: GraphQLSchema, opts: WalkOptions): DocsModel 
   const filter = entityFilter(opts);
 
   const queries: FieldEntry[] = queryType
-    ? visibleFields(queryType, opts.isFederated).map(toFieldEntry).filter((f) =>
-        filter({ kind: 'Query', name: f.name }),
-      )
+    ? visibleFields(queryType, opts.isFederated)
+        .map(toFieldEntry)
+        .filter((f) => filter({ kind: 'Query', name: f.name }))
     : [];
   const mutations: FieldEntry[] = mutationType
-    ? visibleFields(mutationType, opts.isFederated).map(toFieldEntry).filter((f) =>
-        filter({ kind: 'Mutation', name: f.name }),
-      )
+    ? visibleFields(mutationType, opts.isFederated)
+        .map(toFieldEntry)
+        .filter((f) => filter({ kind: 'Mutation', name: f.name }))
     : [];
   const subscriptions: FieldEntry[] = subscriptionType
-    ? visibleFields(subscriptionType, opts.isFederated).map(toFieldEntry).filter((f) =>
-        filter({ kind: 'Subscription', name: f.name }),
-      )
+    ? visibleFields(subscriptionType, opts.isFederated)
+        .map(toFieldEntry)
+        .filter((f) => filter({ kind: 'Subscription', name: f.name }))
     : [];
 
   const objectTypes: TypeEntry[] = [];
@@ -209,7 +194,7 @@ function toArgEntry(arg: GraphQLArgument): ArgEntry {
     name: arg.name,
     description: parsed.body,
     type: toTypeRef(arg.type),
-    defaultValue: arg.defaultValue !== undefined ? serializeDefault(arg) : undefined,
+    defaultValue: arg.defaultValue === undefined ? undefined : serializeDefault(arg),
   };
 }
 

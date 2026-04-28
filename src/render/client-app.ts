@@ -79,8 +79,13 @@ export const CLIENT_APP_JS = String.raw`
       })
       .then(function (model) {
         state.model = model;
+        // Order-independent: bindNavClickDelegate attaches one listener to
+        // [data-ngd-nav] (rendered by the server) and uses event delegation,
+        // so clicks on entries added by renderNav() bubble up regardless of
+        // which ran first. Both functions are idempotent and can't fail in
+        // a way that breaks the other.
+        bindNavClickDelegate();
         renderNav();
-        wireNavClicks();
         var initial = window.__INITIAL_ENTITY__ || null;
         renderEntity(initial);
         wireSearch();
@@ -124,7 +129,7 @@ export const CLIENT_APP_JS = String.raw`
     replaceChildrenWithHtml(nav, html);
   }
 
-  function wireNavClicks() {
+  function bindNavClickDelegate() {
     var nav = document.querySelector('[data-ngd-nav]');
     if (!nav) return;
     nav.addEventListener('click', function (ev) {

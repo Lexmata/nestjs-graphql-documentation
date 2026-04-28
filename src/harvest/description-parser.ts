@@ -1,4 +1,4 @@
-import type { ParsedTags } from './docs-model';
+import type { ParsedTags } from './docs-model.js';
 
 export interface ParsedDescription {
   body: string;
@@ -20,7 +20,7 @@ export function parseDescription(input: string | undefined | null): ParsedDescri
   while (i < lines.length) {
     const line = lines[i];
 
-    if (/^```/.test(line)) {
+    if (line.startsWith('```')) {
       inFence = !inFence;
       bodyLines.push(line);
       i++;
@@ -60,8 +60,8 @@ export function parseDescription(input: string | undefined | null): ParsedDescri
   }
 
   // Strip leading and trailing blank lines from body
-  while (bodyLines.length && bodyLines[0].trim() === '') bodyLines.shift();
-  while (bodyLines.length && bodyLines[bodyLines.length - 1].trim() === '') bodyLines.pop();
+  while (bodyLines.length > 0 && bodyLines[0].trim() === '') bodyLines.shift();
+  while (bodyLines.length > 0 && bodyLines.at(-1)!.trim() === '') bodyLines.pop();
 
   return { body: bodyLines.join('\n'), tags };
 }

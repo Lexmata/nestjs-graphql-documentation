@@ -1,9 +1,9 @@
 import { Controller, Get, Inject, Req, Res } from '@nestjs/common';
-import { SchemaHarvesterService } from './harvest/schema-harvester.service';
-import { GRAPHQL_DOCS_OPTIONS, GraphQLDocsOptions } from './options';
-import { renderHtml, renderSchemaJson } from './render/html-renderer';
-import { renderCss } from './render/css';
-import { CLIENT_APP_JS } from './render/client-app';
+import { SchemaHarvesterService } from './harvest/schema-harvester.service.js';
+import { GRAPHQL_DOCS_OPTIONS, GraphQLDocsOptions } from './options.js';
+import { renderHtml, renderSchemaJson } from './render/html-renderer.js';
+import { renderCss } from './render/css.js';
+import { CLIENT_APP_JS } from './render/client-app.js';
 
 interface HttpResLike {
   setHeader?(key: string, value: string): void;
@@ -16,7 +16,11 @@ interface HttpReqLike {
   url?: string;
 }
 
-const STATIC_CACHE_CONTROL = 'public, max-age=3600';
+const STATIC_ASSET_CACHE_CONTROL = 'public, max-age=3600';
+// schema.json may reflect user-specific GraphQL fields once host apps gate the
+// docs route behind auth. Keep it cacheable in the browser but not in shared
+// caches, so a CDN/proxy won't serve one tenant's schema to another.
+const SCHEMA_JSON_CACHE_CONTROL = 'private, max-age=3600';
 
 function setHeader(res: HttpResLike, key: string, value: string): void {
   if (typeof res.setHeader === 'function') {
@@ -26,33 +30,40 @@ function setHeader(res: HttpResLike, key: string, value: string): void {
   }
 }
 
-function setContentHeaders(res: HttpResLike, contentType: string, cacheable: boolean): void {
+function setStaticAssetHeaders(res: HttpResLike, contentType: string): void {
   setHeader(res, 'Content-Type', contentType);
-  if (cacheable) setHeader(res, 'Cache-Control', STATIC_CACHE_CONTROL);
+  setHeader(res, 'Cache-Control', STATIC_ASSET_CACHE_CONTROL);
+}
+
+function setSchemaJsonHeaders(res: HttpResLike): void {
+  setHeader(res, 'Content-Type', 'application/json; charset=utf-8');
+  setHeader(res, 'Cache-Control', SCHEMA_JSON_CACHE_CONTROL);
+}
+
+function setHtmlHeaders(res: HttpResLike): void {
+  setHeader(res, 'Content-Type', 'text/html; charset=utf-8');
 }
 
 @Controller()
 export class GraphQLDocsController {
-  private readonly cachedCss: string;
+  // Both caches deferred to first request. Doing either at construction time
+  // would let a misconfigured option (customCss, schema) take down the host
+  // app's entire DI container - which matters because GraphQLDocsModule and
+  // GraphQLModule share an app. Lazy init contains the blast radius to the
+  // docs route and keeps the Nest boot green.
+  private cachedCss: string | undefined;
   private cachedSchemaJson: string | undefined;
 
   constructor(
     private readonly harvester: SchemaHarvesterService,
     @Inject(GRAPHQL_DOCS_OPTIONS) private readonly options: GraphQLDocsOptions,
-  ) {
-    this.cachedCss = renderCss(this.options.customCss);
-  }
+  ) {}
 
   @Get()
-  getHtml(
-    @Res({ passthrough: true }) res: HttpResLike,
-    @Req() req?: HttpReqLike | string,
-  ): string {
+  getHtml(@Res({ passthrough: true }) res: HttpResLike, @Req() req?: HttpReqLike | string): string {
     const path =
-      typeof req === 'string'
-        ? req
-        : req?.originalUrl ?? req?.url ?? this.options.path;
-    setContentHeaders(res, 'text/html; charset=utf-8', false);
+      typeof req === 'string' ? req : (req?.originalUrl ?? req?.url ?? this.options.path);
+    setHtmlHeaders(res);
     return renderHtml(
       this.harvester.getModel(),
       { path: this.options.path, title: this.options.title },
@@ -62,19 +73,23 @@ export class GraphQLDocsController {
 
   @Get('app.js')
   getJs(@Res({ passthrough: true }) res: HttpResLike): string {
-    setContentHeaders(res, 'application/javascript; charset=utf-8', true);
+    setStaticAssetHeaders(res, 'application/javascript; charset=utf-8');
     return CLIENT_APP_JS;
   }
 
   @Get('app.css')
   getCss(@Res({ passthrough: true }) res: HttpResLike): string {
-    setContentHeaders(res, 'text/css; charset=utf-8', true);
+    setStaticAssetHeaders(res, 'text/css; charset=utf-8');
+    this.cachedCss ??= renderCss(this.options.customCss);
     return this.cachedCss;
   }
 
   @Get('schema.json')
   getSchemaJson(@Res({ passthrough: true }) res: HttpResLike): string {
-    setContentHeaders(res, 'application/json; charset=utf-8', true);
+    setSchemaJsonHeaders(res);
+    // Sync init - renderSchemaJson is pure JSON.stringify, never yields, so
+    // a second concurrent request on this event loop cannot observe the
+    // cache mid-write. No lock needed.
     this.cachedSchemaJson ??= renderSchemaJson(this.harvester.getModel());
     return this.cachedSchemaJson;
   }

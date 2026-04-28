@@ -1,5 +1,5 @@
-import type { DocsModel } from '../harvest/docs-model';
-import { escapeHtml, escapeAttr } from '../util/escape';
+import type { DocsModel } from '../harvest/docs-model.js';
+import { escapeHtml, escapeAttr } from '../util/escape.js';
 
 export const PICO_CSS_HREF = 'https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css';
 export const PICO_CSS_INTEGRITY =

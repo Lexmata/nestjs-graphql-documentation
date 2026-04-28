@@ -69,13 +69,7 @@ export interface DirectiveEntry {
   args: ArgEntry[];
 }
 
-export type NamedTypeKind =
-  | 'OBJECT'
-  | 'INPUT_OBJECT'
-  | 'INTERFACE'
-  | 'UNION'
-  | 'ENUM'
-  | 'SCALAR';
+export type NamedTypeKind = 'OBJECT' | 'INPUT_OBJECT' | 'INTERFACE' | 'UNION' | 'ENUM' | 'SCALAR';
 
 export type TypeRef =
   | { kind: 'NAMED'; name: string; namedKind: NamedTypeKind }
