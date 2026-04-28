@@ -1,5 +1,6 @@
 import type { ModuleMetadata, FactoryProvider } from '@nestjs/common';
 import type { EntityRef } from './harvest/docs-model.js';
+import type { CacheOption } from './cache/resolve-cache-options.js';
 
 export const GRAPHQL_DOCS_OPTIONS = Symbol('GRAPHQL_DOCS_OPTIONS');
 
@@ -10,6 +11,7 @@ export interface GraphQLDocsOptions {
   include?: (entity: EntityRef) => boolean;
   exclude?: (entity: EntityRef) => boolean;
   customCss?: string;
+  cache?: CacheOption;
 }
 
 export interface GraphQLDocsAsyncOptions {

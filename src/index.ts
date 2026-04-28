@@ -6,3 +6,8 @@ export {
   GraphQLDocsBootstrapError,
   GRAPHQL_DOCS_OPTIONS,
 } from './options.js';
+export type {
+  ResolvedCacheOptions,
+  CacheOption,
+  CacheOptionsObject,
+} from './cache/resolve-cache-options.js';
