@@ -1,0 +1,69 @@
+name: Bug report
+description: Something in `@lexmata/nestjs-graphql-documentation` isn't working the way it's documented.
+title: 'bug: '
+labels: [bug, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing. A minimal reproduction speeds things up a lot.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What's going wrong
+      description: What did you expect to happen, and what happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: |
+        Paste the smallest `GraphQLDocsModule.forRoot({...})` / resolver combination that reproduces it.
+        Ideally a link to a repo or a runnable snippet. Stack traces are welcome — wrap them in triple backticks.
+      render: ts
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: '@lexmata/nestjs-graphql-documentation version'
+      placeholder: '0.1.0'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: driver
+    attributes:
+      label: GraphQL driver
+      options:
+        - '@nestjs/apollo'
+        - '@nestjs/mercurius'
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: nest
+    attributes:
+      label: '@nestjs/graphql version'
+      placeholder: '12.x'
+    validations:
+      required: true
+
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      placeholder: '22.x'
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Related workarounds, environment quirks, federation setup, reverse proxy config, etc.

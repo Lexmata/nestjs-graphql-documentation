@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question / Discussion
+    url: https://github.com/lexmata/nestjs-graphql-documentation/discussions
+    about: For usage questions or design discussions, open a discussion rather than an issue.

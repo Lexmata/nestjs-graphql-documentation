@@ -17,25 +17,58 @@
     "type": "git",
     "url": "git+https://github.com/lexmata/nestjs-graphql-documentation.git"
   },
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/cjs/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "default": "./dist/cjs/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "packageManager": "pnpm@10.29.2",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "lint": "eslint --ext .ts --no-error-on-unmatched-pattern src test",
-    "lint:fix": "eslint --ext .ts --no-error-on-unmatched-pattern src test --fix",
+    "prepare": "husky",
+    "build": "pnpm run build:cjs && pnpm run build:esm && pnpm run build:flag-modules",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:flag-modules": "node scripts/flag-dual-modules.mjs",
+    "build:clean": "rm -rf dist",
+    "lint": "eslint src test",
+    "lint:fix": "eslint src test --fix",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run test/unit",
     "test:integration": "vitest run test/integration",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "test:e2e:install": "playwright install --with-deps chromium",
+    "test:all": "pnpm test && pnpm test:e2e",
     "test:cov": "vitest run --coverage",
-    "prepublishOnly": "pnpm build"
+    "commitlint": "commitlint --edit",
+    "prepublishOnly": "pnpm run build:clean && pnpm build"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,mjs,cjs}": [
+      "prettier --write"
+    ]
   },
   "peerDependencies": {
     "@nestjs/common": "^10.0.0 || ^11.0.0",
@@ -47,6 +80,9 @@
   },
   "devDependencies": {
     "@apollo/server": "^4.10.0",
+    "@commitlint/cli": "^20.5.2",
+    "@commitlint/config-conventional": "^20.5.0",
+    "@eslint/js": "^10.0.1",
     "@nestjs/apollo": "^12.0.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
@@ -56,20 +92,23 @@
     "@nestjs/platform-fastify": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
     "@swc/core": "^1.15.32",
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.19.17",
     "@types/supertest": "^6.0.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
     "@vitest/coverage-v8": "^1.3.0",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^9.1.0",
+    "eslint": "^10.2.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-unicorn": "^64.0.0",
     "graphql": "^16.8.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "mercurius": "^14.0.0",
-    "prettier": "^3.2.0",
+    "playwright": "^1.59.1",
+    "prettier": "^3.8.3",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0",
     "supertest": "^6.3.0",
     "typescript": "^5.4.0",
+    "typescript-eslint": "^8.59.1",
     "unplugin-swc": "^1.5.9",
     "vitest": "^1.3.0"
   }

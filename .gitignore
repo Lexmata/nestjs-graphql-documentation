@@ -9,3 +9,6 @@ coverage/
 !.env.example
 *.tsbuildinfo
 .vitest-cache/
+
+# Claude Code / superpowers planning artefacts (specs, plans) are local-only.
+docs/superpowers/

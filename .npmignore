@@ -1,0 +1,56 @@
+# package.json's "files" field is the authoritative allowlist for publishes -
+# only `dist`, `LICENSE`, and `README.md` ship. This .npmignore is defence in
+# depth: if a future edit accidentally widens "files" or a consumer uses a
+# tool that prefers .npmignore (npm pack on older versions, some mirrors),
+# it falls back to explicitly excluding everything that is not meant to ship.
+
+# Everything that isn't the built library
+src/
+test/
+scripts/
+docs/
+coverage/
+.github/
+.husky/
+
+# Config & meta files not needed by consumers
+.eslintrc.cjs
+eslint.config.mjs
+commitlint.config.mjs
+.prettierrc.json
+.prettierignore
+vitest.config.ts
+vitest.e2e.config.ts
+tsconfig.json
+tsconfig.cjs.json
+tsconfig.esm.json
+
+# Lockfiles, dotfiles, logs
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+.gitattributes
+.gitignore
+.worktrees/
+*.log
+*.tsbuildinfo
+.vitest-cache/
+
+# Development dependencies' caches and artifacts
+node_modules/
+
+# Env files never ship
+.env
+.env.*
+!.env.example
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Repo-level docs that live on GitHub, not npm (CHANGELOG.md is shipped
+# via the "files" allowlist so consumers can see release notes from
+# node_modules).
+CONTRIBUTING.md
+SECURITY.md
+CODE_OF_CONDUCT.md

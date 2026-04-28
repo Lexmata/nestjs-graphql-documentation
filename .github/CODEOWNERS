@@ -1,0 +1,13 @@
+# Every pull request is routed to a default reviewer set. More specific
+# globs below win over the fallback at the top.
+*                                   @lexmata/maintainers
+
+# Build + release + CI tooling owned by platform group.
+/.github/                           @lexmata/maintainers
+/.github/workflows/                 @lexmata/maintainers
+/package.json                       @lexmata/maintainers
+/pnpm-lock.yaml                     @lexmata/maintainers
+/tsconfig*.json                     @lexmata/maintainers
+/vitest*.config.ts                  @lexmata/maintainers
+/eslint.config.mjs                  @lexmata/maintainers
+/scripts/                           @lexmata/maintainers

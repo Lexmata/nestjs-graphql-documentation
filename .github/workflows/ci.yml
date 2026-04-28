@@ -5,12 +5,21 @@ on:
     branches: [develop, main]
   pull_request:
 
+concurrency:
+  # Cancel stale runs on the same ref; keep main/develop runs around so the
+  # green bar on protected branches reflects the latest commit.
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/develop' }}
+
+permissions:
+  contents: read
+
 jobs:
-  build-test:
+  install:
+    name: Install & cache
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20, 22]
+    outputs:
+      pnpm-store-path: ${{ steps.pnpm-store.outputs.path }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3
@@ -18,9 +27,137 @@ jobs:
           version: 10.29.2
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Expose pnpm store path
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+  lint:
+    name: Lint
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10.29.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
+      - name: Check formatting
+        run: pnpm exec prettier --check .
+
+  typecheck:
+    name: Type-check
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10.29.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc --noEmit
+
+  build:
+    name: Build (dual ESM + CJS)
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10.29.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm test
+      - name: Verify dual-module smoke load
+        run: |
+          node -e "const m = require('./dist/cjs'); if (!m.GraphQLDocsModule) throw new Error('cjs missing GraphQLDocsModule'); console.log('cjs OK');"
+          node --input-type=module -e "import('./dist/esm/index.js').then(m => { if (!m.GraphQLDocsModule) throw new Error('esm missing GraphQLDocsModule'); console.log('esm OK'); });"
+
+  unit-test:
+    name: Unit & integration tests (100% coverage gate)
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10.29.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:cov
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  e2e-test:
+    name: Browser E2E (Playwright)
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10.29.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Resolve Playwright version
+        id: playwright-version
+        run: |
+          VERSION=$(node -p "require('./node_modules/playwright/package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+      - name: Install Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm test:e2e:install
+      - run: pnpm test:e2e
+
+  ci-success:
+    # Meta-job the branch protection rule targets. GitHub can only require a
+    # single status check; this one turns green only when every upstream job
+    # succeeds, so requiring it effectively requires all of them.
+    name: CI success
+    if: always()
+    needs: [lint, typecheck, build, unit-test, e2e-test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify upstream jobs
+        run: |
+          if [[ "${{ needs.lint.result }}" != "success" ]] \
+            || [[ "${{ needs.typecheck.result }}" != "success" ]] \
+            || [[ "${{ needs.build.result }}" != "success" ]] \
+            || [[ "${{ needs.unit-test.result }}" != "success" ]] \
+            || [[ "${{ needs.e2e-test.result }}" != "success" ]]; then
+            echo "One or more upstream jobs failed"
+            exit 1
+          fi

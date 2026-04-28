@@ -1,0 +1,67 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: America/New_York
+    open-pull-requests-limit: 5
+    target-branch: develop
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+      include: scope
+    labels:
+      - dependencies
+    groups:
+      # Collapse the linter / formatter stack into one PR so green CI is an
+      # all-or-nothing decision and we don't juggle interdependent bumps.
+      linting:
+        patterns:
+          - 'eslint*'
+          - '@eslint/*'
+          - 'typescript-eslint'
+          - 'prettier*'
+          - 'eslint-config-*'
+          - 'eslint-plugin-*'
+      nestjs:
+        patterns:
+          - '@nestjs/*'
+      testing:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+          - 'supertest'
+          - '@types/supertest'
+          - 'playwright*'
+      apollo-and-mercurius:
+        patterns:
+          - '@apollo/*'
+          - 'mercurius'
+    ignore:
+      # Major upgrades of the NestJS peer deps require a coordinated bump of
+      # our peerDependencies range; handle manually.
+      - dependency-name: '@nestjs/*'
+        update-types: [version-update:semver-major]
+      - dependency-name: 'graphql'
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: America/New_York
+    open-pull-requests-limit: 3
+    target-branch: develop
+    commit-message:
+      prefix: ci(actions)
+    labels:
+      - dependencies
+      - github-actions
+    groups:
+      actions-minor:
+        update-types: [minor, patch]
