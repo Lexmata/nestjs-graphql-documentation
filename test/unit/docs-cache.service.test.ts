@@ -153,4 +153,28 @@ describe('DocsCacheService', () => {
     svc.onModuleInit();
     expect(await svc.get('ngd:x')).toBeUndefined();
   });
+
+  it('invalidate catches store errors without throwing', async () => {
+    const cache = {
+      get: vi.fn(),
+      set: vi.fn(), // set succeeds
+      del: vi.fn(async () => {
+        throw new Error('redis down');
+      }),
+    };
+    const ref = { get: () => cache } as never;
+    const svc = new DocsCacheService(ref, harvester, {
+      path: '/docs',
+      cache: true,
+    } as never);
+    const warn = vi.fn();
+    (svc as unknown as { logger: { warn: ReturnType<typeof vi.fn> } }).logger = {
+      warn,
+    } as never;
+    svc.onModuleInit();
+    await svc.set('ngd:x', 'v'); // tracks key
+    await svc.invalidate(); // del fails but doesn't throw
+    expect(warn).toHaveBeenCalledTimes(1); // only del error
+    expect(cache.del).toHaveBeenCalledWith('ngd:x');
+  });
 });

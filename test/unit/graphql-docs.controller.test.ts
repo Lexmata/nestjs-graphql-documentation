@@ -218,6 +218,20 @@ describe('GraphQLDocsController', () => {
       expect(cache.set).toHaveBeenCalledWith('ngd:html:', expect.any(String));
     });
 
+    it('getHtml handles path not starting with options.path', async () => {
+      const cache = {
+        isEnabled: () => true,
+        get: vi.fn(async () => undefined),
+        set: vi.fn(),
+        invalidate: vi.fn(),
+      };
+      const ctl = new GraphQLDocsController(harvester, options, cache as never);
+      const res = mockRes();
+      const body = await ctl.getHtml(res as never, '/other-path');
+      expect(body).toMatch(/^<!DOCTYPE html>/);
+      expect(cache.set).toHaveBeenCalledWith('ngd:html:', expect.any(String));
+    });
+
     it('falls through to ??= when docsCache is undefined', async () => {
       const ctl = new GraphQLDocsController(harvester, options, undefined);
       const res = mockRes();
