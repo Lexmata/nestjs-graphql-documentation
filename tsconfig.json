@@ -4,6 +4,14 @@
     "lib": ["ES2023"],
     "module": "commonjs",
     "moduleResolution": "node",
+    // TypeScript 6 renames `moduleResolution: "node"` to `"node10"` and
+    // deprecates the old name. We deliberately keep the classic node10
+    // resolution so the dual-emit configs (tsconfig.cjs.json,
+    // tsconfig.esm.json) can override `module` without having to switch to
+    // the per-file moduleResolution that nodenext requires. The opt-in flag
+    // silences the deprecation warning; plan to remove it alongside a real
+    // nodenext migration before TS 7.
+    "ignoreDeprecations": "6.0",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,

@@ -34,6 +34,18 @@ describe('federation', () => {
     expect(isFederationInternalRootField('hello')).toBe(false);
   });
 
+  it('detects federation via the _entities root field alone', () => {
+    // Covers the right-hand side of the `'_service' in fields || '_entities' in fields`
+    // short-circuit - our main federation example uses _service, so v8 wouldn't
+    // otherwise see the _entities-only path.
+    const schema = buildSchema(`
+      type User { id: ID! }
+      union _Entity = User
+      type Query { _entities(representations: [ID!]!): [_Entity] }
+    `);
+    expect(detectFederation(schema)).toBe(true);
+  });
+
   it('detects federation via an internal type present in the type map without a root field', () => {
     // The _Entity type exists as a schema member but the query type doesn't
     // list _service/_entities - exercises the type-map scan branch.

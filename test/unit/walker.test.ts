@@ -117,6 +117,24 @@ query { user(id: 1) { id } }
     expect(model.enums).toHaveLength(0);
   });
 
+  it('honours an exclude predicate that rejects every kind, covering each cascade branch', () => {
+    const model = walkSchema(schema, {
+      title: 'T',
+      isFederated: false,
+      // Returns false for every entity, so each `if (filter(...))` branch in
+      // the type-map cascade (Object / Input / Interface / Union / Enum /
+      // Scalar / Directive) takes the falsy side.
+      exclude: () => true,
+    });
+    expect(model.objectTypes).toEqual([]);
+    expect(model.inputTypes).toEqual([]);
+    expect(model.interfaces).toEqual([]);
+    expect(model.unions).toEqual([]);
+    expect(model.enums).toEqual([]);
+    expect(model.scalars).toEqual([]);
+    expect(model.directives).toEqual([]);
+  });
+
   it('skips built-in GraphQL types (String, Int, __Schema, etc.)', () => {
     const model = walkSchema(schema, { title: 'T', isFederated: false });
     expect(model.scalars.map((s) => s.name)).not.toContain('String');
