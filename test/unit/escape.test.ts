@@ -3,9 +3,7 @@ import { escapeHtml, escapeAttr } from '../../src/util/escape';
 
 describe('escapeHtml', () => {
   it('escapes &, <, >, ", \'', () => {
-    expect(escapeHtml(`<a href="x">&copy;'`)).toBe(
-      '&lt;a href=&quot;x&quot;&gt;&amp;copy;&#39;',
-    );
+    expect(escapeHtml(`<a href="x">&copy;'`)).toBe('&lt;a href=&quot;x&quot;&gt;&amp;copy;&#39;');
   });
 
   it('returns empty string for null/undefined', () => {
@@ -26,4 +24,13 @@ describe('escapeAttr', () => {
   it('escapes ampersands', () => {
     expect(escapeAttr('a&b')).toBe('a&amp;b');
   });
+
+  // Guards against a future maintainer narrowing escapeHtml's character set
+  // for body-context performance and silently weakening attribute escaping.
+  it.each(['<a href="x">&copy;\'', '"onmouseover=alert(1)', 'a&b', 'hello world', ''])(
+    'produces the same output as escapeHtml for %j',
+    (input) => {
+      expect(escapeAttr(input)).toBe(escapeHtml(input));
+    },
+  );
 });

@@ -57,4 +57,15 @@ describe('parseDescription', () => {
     const out = parseDescription('Body.\n\n@auth admin');
     expect(out.body).toBe('Body.');
   });
+
+  it('supports inline value on the @example line', () => {
+    const out = parseDescription('@example query { me }');
+    expect(out.tags.examples).toEqual(['query { me }']);
+  });
+
+  it('terminates an @example block when a new tag appears', () => {
+    const out = parseDescription('@example\nquery { a }\n@auth admin');
+    expect(out.tags.examples).toEqual(['query { a }']);
+    expect(out.tags.auth).toBe('admin');
+  });
 });

@@ -77,6 +77,17 @@ describe('renderHtml', () => {
     expect(html).toContain('data-ngd-main');
     expect(html).toContain('data-ngd-search');
   });
+
+  it('embeds __INITIAL_ENTITY__ as null when requestPath does not share the mount path prefix', () => {
+    // e.g. a request coming from behind a reverse proxy that rewrote the URL.
+    const html = renderHtml(MODEL, { path: '/docs' }, '/unrelated/route/here');
+    expect(html).toMatch(/__INITIAL_ENTITY__\s*=\s*null/);
+  });
+
+  it('embeds __INITIAL_ENTITY__ as null when the URL tail uses an unknown segment', () => {
+    const html = renderHtml(MODEL, { path: '/docs' }, '/docs/whatever/name');
+    expect(html).toMatch(/__INITIAL_ENTITY__\s*=\s*null/);
+  });
 });
 
 describe('renderSchemaJson', () => {

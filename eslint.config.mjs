@@ -5,7 +5,20 @@ import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
-    ignores: ['dist/', 'coverage/', 'node_modules/', '**/*.d.ts'],
+    // Skip build output, type declarations, and the root config files that
+    // sit outside tsconfig's include glob. These would otherwise trigger the
+    // typescript-eslint "file not included in any tsconfig" parse error.
+    ignores: [
+      'dist/',
+      'coverage/',
+      'node_modules/',
+      '**/*.d.ts',
+      'vitest.config.ts',
+      'vitest.e2e.config.ts',
+      'eslint.config.mjs',
+      'commitlint.config.mjs',
+      'scripts/**/*.mjs',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

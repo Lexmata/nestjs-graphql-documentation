@@ -5,7 +5,7 @@ import { GraphQLDocsBootstrapError } from '../../src/options';
 
 const goodSchema = buildSchema(`type Query { hello: String }`);
 
-const emptyModuleRef = { get: () => undefined } as never;
+const emptyModuleRef = { get: () => {} } as never;
 
 function makeService(schema: unknown, options: Record<string, unknown>): SchemaHarvesterService {
   const svc = new SchemaHarvesterService(emptyModuleRef, options as never);
@@ -51,5 +51,42 @@ describe('SchemaHarvesterService', () => {
   it('getModel throws if called before onModuleInit', () => {
     const svc = makeService(goodSchema, { path: '/docs' });
     expect(() => svc.getModel()).toThrow();
+  });
+
+  it('throws GraphQLDocsBootstrapError when ModuleRef.get throws and no mock host is attached', () => {
+    // Simulate the real Nest path: ModuleRef.get raises because GraphQLSchemaHost
+    // isn't available in the current module scope. tryGetSchemaHost catches and
+    // returns undefined, then onModuleInit throws the bootstrap error.
+    const throwingModuleRef = {
+      get: () => {
+        throw new Error('provider not found');
+      },
+    } as never;
+    const svc = new SchemaHarvesterService(throwingModuleRef, { path: '/docs' } as never);
+    expect(() => svc.onModuleInit()).toThrow(GraphQLDocsBootstrapError);
+  });
+
+  it('resolves GraphQLSchemaHost via ModuleRef when no mock host is attached', () => {
+    const moduleRef = {
+      get: () => ({ schema: goodSchema }),
+    } as never;
+    const svc = new SchemaHarvesterService(moduleRef, { path: '/docs' } as never);
+    svc.onModuleInit();
+    expect(svc.getModel().queries[0].name).toBe('hello');
+  });
+
+  it('exclude predicate that throws is treated as excluded', () => {
+    const warn = vi.fn();
+    const svc = makeService(goodSchema, {
+      path: '/docs',
+      exclude: () => {
+        throw new Error('boom');
+      },
+    });
+    (svc as unknown as { logger: { warn: typeof warn } }).logger = { warn } as never;
+    svc.onModuleInit();
+    expect(warn).toHaveBeenCalled();
+    // Every query is excluded because the predicate always throws.
+    expect(svc.getModel().queries).toHaveLength(0);
   });
 });

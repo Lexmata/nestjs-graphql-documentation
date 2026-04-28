@@ -23,7 +23,6 @@ describe.each<DriverChoice>(['apollo', 'mercurius'])('forRoot with %s driver', (
       app = moduleRef.createNestApplication();
       await app.init();
     }
-
   });
 
   afterEach(async () => {

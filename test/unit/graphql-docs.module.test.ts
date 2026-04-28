@@ -47,4 +47,34 @@ describe('GraphQLDocsModule', () => {
       }),
     ).toThrow(/synchronous useFactory/);
   });
+
+  it('forRootAsync throws when the factory returns options with no path', () => {
+    expect(() =>
+      GraphQLDocsModule.forRootAsync({
+        useFactory: () => ({ path: '' }),
+      }),
+    ).toThrow(/did not return a path/);
+  });
+
+  it('forRootAsync honors the inject array by passing placeholder args to the factory', () => {
+    let received: unknown[] = [];
+    const def = GraphQLDocsModule.forRootAsync({
+      inject: ['TOKEN_A', 'TOKEN_B'],
+      useFactory: (...args) => {
+        received = args;
+        return { path: '/docs' };
+      },
+    });
+    expect(def.module).toBe(GraphQLDocsModule);
+    expect(received).toHaveLength(2);
+  });
+
+  it('forRootAsync forwards the imports array onto the returned module definition', () => {
+    class FakeModule {}
+    const def = GraphQLDocsModule.forRootAsync({
+      imports: [FakeModule],
+      useFactory: () => ({ path: '/docs' }),
+    });
+    expect(def.imports).toContain(FakeModule);
+  });
 });

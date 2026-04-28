@@ -15,7 +15,9 @@ describe('enabled: false', () => {
     app = moduleRef.createNestApplication();
     await app.init();
   });
-  afterEach(async () => { await app.close(); });
+  afterEach(async () => {
+    await app.close();
+  });
 
   it('does not mount the docs routes', async () => {
     const res = await request(app.getHttpServer()).get('/docs');
@@ -37,7 +39,9 @@ describe('include/exclude filters', () => {
     app = moduleRef.createNestApplication();
     await app.init();
   });
-  afterEach(async () => { await app.close(); });
+  afterEach(async () => {
+    await app.close();
+  });
 
   it('removes excluded entities from schema.json', async () => {
     const res = await request(app.getHttpServer()).get('/docs/schema.json');
@@ -57,7 +61,9 @@ describe('customCss', () => {
     app = moduleRef.createNestApplication();
     await app.init();
   });
-  afterEach(async () => { await app.close(); });
+  afterEach(async () => {
+    await app.close();
+  });
 
   it('appends customCss to the served stylesheet', async () => {
     const res = await request(app.getHttpServer()).get('/docs/app.css');

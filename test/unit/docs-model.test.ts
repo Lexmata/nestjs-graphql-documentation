@@ -25,9 +25,16 @@ describe('docs-model types', () => {
   it('DocsModel has all required collections', () => {
     const model: DocsModel = {
       meta: { title: 't', generatedAt: '2026-04-27T00:00:00Z', isFederated: false },
-      queries: [], mutations: [], subscriptions: [],
-      objectTypes: [], inputTypes: [], interfaces: [],
-      unions: [], enums: [], scalars: [], directives: [],
+      queries: [],
+      mutations: [],
+      subscriptions: [],
+      objectTypes: [],
+      inputTypes: [],
+      interfaces: [],
+      unions: [],
+      enums: [],
+      scalars: [],
+      directives: [],
     };
     expect(Object.keys(model)).toContain('queries');
   });

@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { buildSchema } from 'graphql';
-import { detectFederation, isFederationInternalType, isFederationInternalRootField } from '../../src/harvest/federation';
+import {
+  detectFederation,
+  isFederationInternalType,
+  isFederationInternalRootField,
+} from '../../src/harvest/federation';
 
 describe('federation', () => {
   it('detects non-federated schema', () => {
@@ -28,5 +32,16 @@ describe('federation', () => {
     expect(isFederationInternalRootField('_service')).toBe(true);
     expect(isFederationInternalRootField('_entities')).toBe(true);
     expect(isFederationInternalRootField('hello')).toBe(false);
+  });
+
+  it('detects federation via an internal type present in the type map without a root field', () => {
+    // The _Entity type exists as a schema member but the query type doesn't
+    // list _service/_entities - exercises the type-map scan branch.
+    const schema = buildSchema(`
+      type User { id: ID! }
+      union _Entity = User
+      type Query { hello: String }
+    `);
+    expect(detectFederation(schema)).toBe(true);
   });
 });
