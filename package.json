@@ -1,6 +1,6 @@
 {
   "name": "@lexmata/nestjs-graphql-documentation",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Swagger-like documentation module for NestJS GraphQL applications.",
   "keywords": [
     "nestjs",
