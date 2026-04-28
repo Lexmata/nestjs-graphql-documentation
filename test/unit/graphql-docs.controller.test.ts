@@ -83,6 +83,28 @@ describe('GraphQLDocsController', () => {
     expect(body2).toBe(body1);
   });
 
+  it('falls back to Fastify-style .header() when res.setHeader is absent', () => {
+    const calls: Array<[string, string]> = [];
+    const fastifyLikeRes = {
+      header: (k: string, v: string) => {
+        calls.push([k, v]);
+      },
+    };
+    const ctl = new GraphQLDocsController(harvester, options);
+    ctl.getJs(fastifyLikeRes as never);
+    expect(calls).toContainEqual(['Content-Type', 'application/javascript; charset=utf-8']);
+    expect(calls).toContainEqual(['Cache-Control', 'public, max-age=3600']);
+  });
+
+  it('silently no-ops when neither setHeader nor header is available', () => {
+    const ctl = new GraphQLDocsController(harvester, options);
+    // Exercise the final `else` branch in the header helper - no crash, just
+    // skip the header write. Useful when callers pass through a test double
+    // that omits both methods.
+    const body = ctl.getJs({} as never);
+    expect(typeof body).toBe('string');
+  });
+
   it('getHtml reads the path from request.originalUrl when a request object is passed', () => {
     const ctl = new GraphQLDocsController(harvester, options);
     const body = ctl.getHtml(mockRes() as never, { originalUrl: '/docs/queries/me' } as never);
