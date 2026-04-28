@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { GraphQLDocsModule } from '../../src/graphql-docs.module';
 import { GRAPHQL_DOCS_OPTIONS } from '../../src/options';
+import { DocsCacheService } from '../../src/cache/docs-cache.service';
 
 describe('GraphQLDocsModule', () => {
   it('forRoot registers a path-bound controller, harvester, and options provider', () => {
@@ -76,5 +77,19 @@ describe('GraphQLDocsModule', () => {
       useFactory: () => ({ path: '/docs' }),
     });
     expect(def.imports).toContain(FakeModule);
+  });
+
+  it('forRoot with cache:true registers DocsCacheService as a provider', () => {
+    const def = GraphQLDocsModule.forRoot({ path: '/docs', cache: true });
+    const providers = def.providers ?? [];
+    const hasCacheService = providers.includes(DocsCacheService);
+    expect(hasCacheService).toBe(true);
+  });
+
+  it('forRoot without cache does NOT register DocsCacheService', () => {
+    const def = GraphQLDocsModule.forRoot({ path: '/docs' });
+    const providers = def.providers ?? [];
+    const hasCacheService = providers.includes(DocsCacheService);
+    expect(hasCacheService).toBe(false);
   });
 });
