@@ -1,6 +1,5 @@
 import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { SchemaHarvesterService } from '../harvest/schema-harvester.service.js';
 import { GRAPHQL_DOCS_OPTIONS, GraphQLDocsOptions } from '../options.js';
 import { resolveCacheOptions, ResolvedCacheOptions } from './resolve-cache-options.js';
 
@@ -19,7 +18,6 @@ export class DocsCacheService implements OnModuleInit {
 
   constructor(
     private readonly moduleRef: ModuleRef,
-    private readonly harvester: SchemaHarvesterService,
     @Inject(GRAPHQL_DOCS_OPTIONS) private readonly options: GraphQLDocsOptions,
   ) {}
 

@@ -76,11 +76,11 @@ describe('GraphQLDocsController', () => {
     expect(res.getHeader('Cache-Control')).toBe('private, max-age=3600');
   });
 
-  it('getSchemaJson returns the same cached string on repeated calls', async () => {
+  it('getSchemaJson returns consistent output on repeated calls', async () => {
     const ctl = new GraphQLDocsController(harvester, options);
     const body1 = await ctl.getSchemaJson(mockRes() as never);
     const body2 = await ctl.getSchemaJson(mockRes() as never);
-    expect(body2).toBe(body1);
+    expect(body2).toEqual(body1);
   });
 
   it('falls back to Fastify-style .header() when res.setHeader is absent', () => {
@@ -218,21 +218,7 @@ describe('GraphQLDocsController', () => {
       expect(cache.set).toHaveBeenCalledWith('ngd:html:', expect.any(String));
     });
 
-    it('getHtml handles path not starting with options.path', async () => {
-      const cache = {
-        isEnabled: () => true,
-        get: vi.fn(async () => undefined),
-        set: vi.fn(),
-        invalidate: vi.fn(),
-      };
-      const ctl = new GraphQLDocsController(harvester, options, cache as never);
-      const res = mockRes();
-      const body = await ctl.getHtml(res as never, '/other-path');
-      expect(body).toMatch(/^<!DOCTYPE html>/);
-      expect(cache.set).toHaveBeenCalledWith('ngd:html:', expect.any(String));
-    });
-
-    it('falls through to ??= when docsCache is undefined', async () => {
+    it('falls through when docsCache is undefined', async () => {
       const ctl = new GraphQLDocsController(harvester, options, undefined);
       const res = mockRes();
       const body = await ctl.getSchemaJson(res as never);

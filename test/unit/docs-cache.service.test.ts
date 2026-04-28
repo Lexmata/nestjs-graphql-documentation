@@ -15,11 +15,6 @@ function makeMockCache() {
   };
 }
 
-const harvester = {
-  reharvest: vi.fn(),
-  getModel: vi.fn(() => ({ meta: { title: 'T' } })),
-} as never;
-
 describe('DocsCacheService', () => {
   it('isEnabled returns false when cache resolution fails', () => {
     const throwingRef = {
@@ -27,7 +22,7 @@ describe('DocsCacheService', () => {
         throw new Error('not found');
       },
     } as never;
-    const svc = new DocsCacheService(throwingRef, harvester, {
+    const svc = new DocsCacheService(throwingRef, {
       path: '/docs',
       cache: true,
     } as never);
@@ -38,7 +33,7 @@ describe('DocsCacheService', () => {
   it('isEnabled returns true when cache resolves', () => {
     const cache = makeMockCache();
     const ref = { get: () => cache } as never;
-    const svc = new DocsCacheService(ref, harvester, {
+    const svc = new DocsCacheService(ref, {
       path: '/docs',
       cache: true,
     } as never);
@@ -50,7 +45,7 @@ describe('DocsCacheService', () => {
     const cache = makeMockCache();
     cache.store.set('ngd:schema.json', '{"cached":true}');
     const ref = { get: () => cache } as never;
-    const svc = new DocsCacheService(ref, harvester, {
+    const svc = new DocsCacheService(ref, {
       path: '/docs',
       cache: true,
     } as never);
@@ -61,7 +56,7 @@ describe('DocsCacheService', () => {
   it('get returns undefined on miss', async () => {
     const cache = makeMockCache();
     const ref = { get: () => cache } as never;
-    const svc = new DocsCacheService(ref, harvester, {
+    const svc = new DocsCacheService(ref, {
       path: '/docs',
       cache: true,
     } as never);
@@ -72,7 +67,7 @@ describe('DocsCacheService', () => {
   it('set writes with configured TTL and tracks the key', async () => {
     const cache = makeMockCache();
     const ref = { get: () => cache } as never;
-    const svc = new DocsCacheService(ref, harvester, {
+    const svc = new DocsCacheService(ref, {
       path: '/docs',
       cache: { ttl: 60 },
     } as never);
@@ -84,7 +79,7 @@ describe('DocsCacheService', () => {
   it('invalidate deletes all tracked keys', async () => {
     const cache = makeMockCache();
     const ref = { get: () => cache } as never;
-    const svc = new DocsCacheService(ref, harvester, {
+    const svc = new DocsCacheService(ref, {
       path: '/docs',
       cache: true,
     } as never);
@@ -105,7 +100,7 @@ describe('DocsCacheService', () => {
       del: vi.fn(),
     };
     const ref = { get: () => cache } as never;
-    const svc = new DocsCacheService(ref, harvester, {
+    const svc = new DocsCacheService(ref, {
       path: '/docs',
       cache: true,
     } as never);
@@ -127,7 +122,7 @@ describe('DocsCacheService', () => {
       del: vi.fn(),
     };
     const ref = { get: () => cache } as never;
-    const svc = new DocsCacheService(ref, harvester, {
+    const svc = new DocsCacheService(ref, {
       path: '/docs',
       cache: true,
     } as never);
@@ -146,7 +141,7 @@ describe('DocsCacheService', () => {
         throw new Error('not found');
       },
     } as never;
-    const svc = new DocsCacheService(throwingRef, harvester, {
+    const svc = new DocsCacheService(throwingRef, {
       path: '/docs',
       cache: true,
     } as never);
@@ -163,7 +158,7 @@ describe('DocsCacheService', () => {
       }),
     };
     const ref = { get: () => cache } as never;
-    const svc = new DocsCacheService(ref, harvester, {
+    const svc = new DocsCacheService(ref, {
       path: '/docs',
       cache: true,
     } as never);
