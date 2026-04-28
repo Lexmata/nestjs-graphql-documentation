@@ -15,8 +15,12 @@
   "author": "Lexmata LLC",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lexmata/nestjs-graphql-documentation.git"
+    "url": "git+https://github.com/Lexmata/nestjs-graphql-documentation.git"
   },
+  "bugs": {
+    "url": "https://github.com/Lexmata/nestjs-graphql-documentation/issues"
+  },
+  "homepage": "https://github.com/Lexmata/nestjs-graphql-documentation#readme",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/cjs/index.d.ts",
